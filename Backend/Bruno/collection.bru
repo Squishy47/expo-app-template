@@ -1,0 +1,104 @@
+headers {
+  Authorization: {{access_token}}
+}
+
+auth {
+  mode: none
+}
+
+script:pre-request {
+  const fetch = require('node-fetch')
+  
+  updateTRPCQueryParams();
+  await handleTokenUpdate();
+  // injectApiKey();
+  
+  // ---------------- Convert JSON to TRPC query params. ----------------
+  function updateTRPCQueryParams(){
+    console.log('converting request body to TRPC query params')
+  
+    if(!req.getUrl().includes('trpc') && (!req.getBody() || req.getMethod() === "POST")){
+      console.log('req is POST or body is empty, not converting params to TRPC format.')
+      return
+    }
+  
+    console.log(JSON.stringify(req.getBody()))
+    
+    const data = `${encodeURIComponent(JSON.stringify(req.getBody()))}`
+    req.setUrl(`${req.getUrl()}?input=${data}`)
+  
+    console.log(req.getUrl())
+    
+    console.log('removing body from request')
+    req.setBody(undefined)
+  }
+  
+  // ---------------- Inject API Key. ----------------
+  function injectApiKey(){
+    console.log('Injecting API key');
+    req.setHeader("x-api-key", bru.getEnvVar("api_key"))
+  }
+  
+  // ---------------- Update token if needed. ----------------
+  async function handleTokenUpdate(){
+    if(!doesTokenExist() || isTokenExpired()){
+      await getAndSetToken();
+      return;
+    }
+  
+    console.log('New token not needed, skipping...')
+  }
+  
+  function isTokenExpired(){
+    if(!doesTokenExist()){
+      return true;
+    }
+  
+    const tokenExp = parseJwt(bru.getEnvVar('access_token')).exp
+  
+    const expDate = new Date(tokenExp*1000)
+  
+    const now = new Date();
+  
+    return expDate < now
+  }
+  
+  function parseJwt (token) {
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+  }
+  
+  function doesTokenExist(){
+    const token = bru.getEnvVar('access_token')
+    
+    if(!token || token === 'null'){
+      return false;
+    }
+  
+    return token ? true : false;
+  }
+  
+  async function getAndSetToken() {
+    const baseUrl = bru.getEnvVar('authUrl')
+    const apiKey = bru.getEnvVar('apiKey')
+    const email = bru.getEnvVar('username');
+    const password = bru.getEnvVar('password')
+  
+    const response = await fetch(`${baseUrl}`, {
+      method: "POST",
+      headers: {
+        "apikey": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+  
+    const resBody = await response.json();
+    const token = resBody.access_token
+  
+    bru.setEnvVar('access_token', token)
+  }
+  
+}
