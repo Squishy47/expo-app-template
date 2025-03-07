@@ -71,7 +71,7 @@ export const UserProvider = ({ children }: Props) => {
         } else if (event === "USER_UPDATED") {
           // handle user updated event
         }
-      }
+      },
     );
 
     return () => {
