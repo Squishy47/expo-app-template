@@ -4,9 +4,9 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import "./globals.css";
 
-import { Theme, ThemeProvider } from "./components/shadcn/ThemeProvider.tsx";
+import { Theme, ThemeProvider } from "./components/shadcn/themeProvider.tsx";
 import { RouterProvider } from "react-router-dom";
-import { router } from "./routes/Router.tsx";
+import { router } from "./routes/router.tsx";
 
 function Main() {
   return (
