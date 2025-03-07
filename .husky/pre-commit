@@ -19,15 +19,15 @@ done
 # Run lint only in directories with changes
 if [ "$website_changes" = true ]; then
   echo "Running lint in website directory..."
-  cd projects/website && bun run pre-commit || exit 1
+  (cd projects/website && bun run pre-commit) || exit 1
 fi
 
 if [ "$backend_changes" = true ]; then
   echo "Running lint in backend directory..."
-  cd projects/backend && bun run pre-commit || exit 1
+  (cd projects/backend && bun run pre-commit) || exit 1
 fi
 
 if [ "$mobile_changes" = true ]; then
   echo "Running lint in mobile-app directory..."
-  cd projects/mobile-app && bun run pre-commit || exit 1
+  (cd projects/mobile-app && bun run pre-commit) || exit 1
 fi
