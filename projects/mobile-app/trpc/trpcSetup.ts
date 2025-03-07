@@ -1,5 +1,5 @@
 import { inferRouterOutputs } from "@trpc/server";
-import type { AppRouter } from "../../Backend/src/routers/router";
+import type { AppRouter } from "../../backend/src/routers/router";
 import { createTRPCReact } from "@trpc/react-query";
 
 //     👆 **type-only** import

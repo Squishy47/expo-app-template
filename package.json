@@ -8,9 +8,9 @@
     "prepare": "husky"
   },
   "workspaces": [
-    "Backend/*",
+    "backend/*",
     "mobile-app/*",
     "supabase/*",
-    "Website/*"
+    "website/*"
   ]
 }
