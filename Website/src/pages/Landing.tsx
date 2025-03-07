@@ -13,7 +13,9 @@ export function LandingPage() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="text-2xl font-bold text-indigo-600">DevAI</div>
+          <div className="text-2xl font-bold text-indigo-600">
+            {import.meta.env.VITE_APP_NAME}
+          </div>
           <nav>
             <ul className="flex space-x-4">
               <li>
