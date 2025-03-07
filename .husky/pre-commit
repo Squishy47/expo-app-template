@@ -1,0 +1,33 @@
+
+# Get the list of changed files
+changed_files=$(git diff --cached --name-only)
+
+# Initialize flags for each workspace
+website_changes=false
+backend_changes=false
+mobile_changes=false
+
+# Check which directories have changes
+for file in $changed_files; do
+  case $file in
+    Website/*) website_changes=true ;;
+    Backend/*) backend_changes=true ;;
+    mobile-app/*) mobile_changes=true ;;
+  esac
+done
+
+# Run lint only in directories with changes
+if [ "$website_changes" = true ]; then
+  echo "Running lint in Website directory..."
+  cd Website && bun run pre-commit || exit 1
+fi
+
+if [ "$backend_changes" = true ]; then
+  echo "Running lint in Backend directory..."
+  cd Backend && bun run pre-commit || exit 1
+fi
+
+if [ "$mobile_changes" = true ]; then
+  echo "Running lint in mobile-app directory..."
+  cd mobile-app && bun run pre-commit || exit 1
+fi

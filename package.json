@@ -1,0 +1,16 @@
+{
+  "name": "expo-app-template",
+  "version": "1.0.0",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "workspaces": [
+    "Backend/*",
+    "mobile-app/*",
+    "supabase/*",
+    "Website/*"
+  ]
+}
