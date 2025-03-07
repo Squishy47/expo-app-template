@@ -3,7 +3,7 @@
     "target": "ES6",
 
     "module": "CommonJS",
-    "outDir": "./build",
+    "outDir": "build",
     "strict": true,
     "lib": ["ES6", "DOM"],
     "typeRoots": ["node_modules/@types"],
