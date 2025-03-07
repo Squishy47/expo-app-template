@@ -1,7 +1,7 @@
 import { Code, Cpu, Database, Github } from "lucide-react";
 import type React from "react";
 
-import { Button } from "../components/ui/button";
+import { Button } from "../components/shadcn/button";
 
 export function LandingPage() {
   const getApp = () => {
