@@ -60,4 +60,5 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-data/postgres/*
+*/data/postgres/*
+.wranger
