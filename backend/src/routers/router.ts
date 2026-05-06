@@ -1,9 +1,10 @@
-import { HelloWorldProc } from "../procs/HelloWorldProc";
-
+import { GetCar } from "../procs/car/GetUser";
 import { router } from "../trpcSetup";
 
 export const appRouter = router({
-  Hello: HelloWorldProc,
+	car: {
+		get: GetCar,
+	},
 });
 
 export type AppRouter = typeof appRouter;

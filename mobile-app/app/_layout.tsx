@@ -1,95 +1,97 @@
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { Stack, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
-
-import { useColorScheme } from "@/components/useColorScheme";
-import { trpc } from "@/trpc/trpcSetup";
-import { httpBatchLink } from "@trpc/react-query";
+import superjson from "superjson";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useEffect, useState } from "react";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { AppRouter } from "../../Backend/src/routers/router";
+import { authClient } from "@/lib/auth-client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import supabase from "../hooks/supabase/useSupabase";
-import { UserProvider } from "@/contexts/AuthContext";
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from "expo-router";
+import { TRPCProvider } from "@/lib/utils/trpc";
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: "(tabs)",
+  anchor: "(tabs)",
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-    ...FontAwesome.font,
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        // With SSR, we usually want to set some default staleTime
+        // above 0 to avoid refetching immediately on the client
+        staleTime: 60 * 1000,
+      },
+    },
   });
-
-  const [trpcClient] = useState<ReturnType<typeof trpc.createClient>>(() => {
-    return trpc.createClient({
-      links: [
-        httpBatchLink({
-          url: process.env.EXPO_PUBLIC_API_URL!,
-          async headers() {
-            const b = await supabase.auth.getSession();
-
-            return {
-              Authorization: b.data.session?.access_token,
-            };
-          },
-        }),
-      ],
-    });
-  });
-
-  const [queryClient] = useState(() => new QueryClient());
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
-  return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <UserProvider>
-          <RootLayoutNav />
-        </UserProvider>
-      </QueryClientProvider>
-    </trpc.Provider>
-  );
 }
 
-function RootLayoutNav() {
+let browserQueryClient: QueryClient | undefined = undefined;
+
+function getQueryClient() {
+  if (typeof window === "undefined") {
+    // Server: always make a new query client
+    return makeQueryClient();
+  } else {
+    // Browser: make a new query client if we don't already have one
+    // This is very important, so we don't re-make a new client if React
+    // suspends during the initial render. This may not be needed if we
+    // have a suspense boundary BELOW the creation of the query client
+    if (!browserQueryClient) browserQueryClient = makeQueryClient();
+    return browserQueryClient;
+  }
+}
+
+export default function RootLayout() {
   const colorScheme = useColorScheme();
 
+  const queryClient = getQueryClient();
+  const [trpcClient] = useState(() =>
+    createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: "http://localhost:3001/trpc",
+          headers() {
+            const headers = new Map<string, string>();
+            const cookies = authClient.getCookie();
+            if (cookies) {
+              headers.set("Cookie", cookies);
+            }
+
+            return Object.fromEntries(headers);
+          },
+          transformer: superjson,
+        }),
+      ],
+    }),
+  );
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await authClient.getSession();
+
+      if (!data?.session) {
+        router.replace("/auth");
+      }
+    };
+
+    checkSession();
+  }, [router]);
+
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-      </Stack>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </TRPCProvider>
+    </QueryClientProvider>
   );
 }

@@ -1,28 +1,24 @@
-import { createClient, User } from "@supabase/supabase-js";
+import { TRPCError } from "@trpc/server";
+import winston, { format } from "winston";
+import { auth } from "./auth";
+import { fromNodeHeaders } from "better-auth/node";
+
+const logger = winston.createLogger({
+  level: "info",
+  format: format.combine(format.timestamp(), format.json()),
+  transports: [new winston.transports.Console()],
+});
 
 export async function GlobalContext(data: any) {
-  const token = data.req.headers.authorization;
-
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
-
-  let user: User | null = null;
-
-  if (token) {
-    const {
-      data: { user: supabaseUser },
-      error,
-    } = await supabase.auth.getUser(token);
-
-    if (!error) {
-      user = supabaseUser;
-    }
-  }
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(data.req.headers),
+  });
 
   return {
-    user,
+    auth: {
+      session,
+    },
+    logger,
   };
 }
 

@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "Repo-Explainer",
+  "name": "LLM SaaS Admin Dashboard",
   "type": "collection",
   "ignore": ["node_modules", ".git"]
 }
